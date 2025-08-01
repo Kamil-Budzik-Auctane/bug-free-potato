@@ -1,0 +1,730 @@
+{
+	"info": {
+		"_postman_id": "12345678-1234-1234-1234-123456789abc",
+		"name": "Shipment Risk Prediction Engine",
+		"description": "Complete API collection for testing the Smart Shipment Risk Prediction Engine with SQLite database",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Core Endpoints",
+			"item": [
+				{
+					"name": "Get All Packages with Risk Scores",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://0.0.0.0:8000/packages",
+							"protocol": "http",
+							"host": [
+								"0.0.0.0"
+							],
+							"port": "8000",
+							"path": [
+								"packages"
+							]
+						},
+						"description": "Get all packages with smart database-driven risk assessments"
+					}
+				},
+				{
+					"name": "Get Single Package Risk",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://0.0.0.0:8000/packages/PKG001",
+							"protocol": "http",
+							"host": [
+								"0.0.0.0"
+							],
+							"port": "8000",
+							"path": [
+								"packages",
+								"PKG001"
+							]
+						},
+						"description": "Get detailed risk assessment for PKG001 (Seattle UPS delivery)"
+					}
+				},
+				{
+					"name": "Get High Risk Package (Miami)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://0.0.0.0:8000/packages/PKG004",
+							"protocol": "http",
+							"host": [
+								"0.0.0.0"
+							],
+							"port": "8000",
+							"path": [
+								"packages",
+								"PKG004"
+							]
+						},
+						"description": "Get risk assessment for PKG004 (Miami DHL delivery - high risk area)"
+					}
+				},
+				{
+					"name": "Send Delay Alert Email",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"package_id\": \"PKG001\",\n  \"customer_email\": \"customer@example.com\"\n}"
+						},
+						"url": {
+							"raw": "http://0.0.0.0:8000/send-alert",
+							"protocol": "http",
+							"host": [
+								"0.0.0.0"
+							],
+							"port": "8000",
+							"path": [
+								"send-alert"
+							]
+						},
+						"description": "Send email alert for high-risk package PKG001"
+					}
+				},
+				{
+					"name": "Log Customer Action - Accept Delay",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"package_id\": \"PKG001\",\n  \"action\": \"Accept Delay\",\n  \"customer_id\": \"CUST123\",\n  \"notes\": \"Customer understands weather delays\"\n}"
+						},
+						"url": {
+							"raw": "http://0.0.0.0:8000/action",
+							"protocol": "http",
+							"host": [
+								"0.0.0.0"
+							],
+							"port": "8000",
+							"path": [
+								"action"
+							]
+						},
+						"description": "Log customer choosing to accept delay"
+					}
+				},
+				{
+					"name": "Log Customer Action - Request Refund",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"package_id\": \"PKG002\",\n  \"action\": \"Request Refund\",\n  \"customer_id\": \"CUST456\",\n  \"notes\": \"Customer needs item urgently\"\n}"
+						},
+						"url": {
+							"raw": "http://0.0.0.0:8000/action",
+							"protocol": "http",
+							"host": [
+								"0.0.0.0"
+							],
+							"port": "8000",
+							"path": [
+								"action"
+							]
+						},
+						"description": "Log customer requesting refund due to delay"
+					}
+				},
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://0.0.0.0:8000/health",
+							"protocol": "http",
+							"host": [
+								"0.0.0.0"
+							],
+							"port": "8000",
+							"path": [
+								"health"
+							]
+						},
+						"description": "Check service health and dependencies"
+					}
+				}
+			],
+			"description": "Main customer-facing API endpoints"
+		},
+		{
+			"name": "Admin & Analytics",
+			"item": [
+				{
+					"name": "Get Performance Statistics",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://0.0.0.0:8000/admin/performance-stats",
+							"protocol": "http",
+							"host": [
+								"0.0.0.0"
+							],
+							"port": "8000",
+							"path": [
+								"admin",
+								"performance-stats"
+							]
+						},
+						"description": "Get comprehensive performance analytics from database"
+					}
+				},
+				{
+					"name": "Database Status Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://0.0.0.0:8000/admin/database-status",
+							"protocol": "http",
+							"host": [
+								"0.0.0.0"
+							],
+							"port": "8000",
+							"path": [
+								"admin",
+								"database-status"
+							]
+						},
+						"description": "Check database health and table statistics"
+					}
+				},
+				{
+					"name": "Analyze Seattle Zip Code Risk",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://0.0.0.0:8000/admin/risk-factors/98101",
+							"protocol": "http",
+							"host": [
+								"0.0.0.0"
+							],
+							"port": "8000",
+							"path": [
+								"admin",
+								"risk-factors",
+								"98101"
+							]
+						},
+						"description": "Get detailed risk analysis for Seattle zip code 98101"
+					}
+				},
+				{
+					"name": "Analyze Miami Zip Code Risk",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://0.0.0.0:8000/admin/risk-factors/33101",
+							"protocol": "http",
+							"host": [
+								"0.0.0.0"
+							],
+							"port": "8000",
+							"path": [
+								"admin",
+								"risk-factors",
+								"33101"
+							]
+						},
+						"description": "Get detailed risk analysis for Miami zip code 33101 (high risk area)"
+					}
+				},
+				{
+					"name": "Analyze UPS Carrier Performance",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://0.0.0.0:8000/admin/carrier-analysis/UPS",
+							"protocol": "http",
+							"host": [
+								"0.0.0.0"
+							],
+							"port": "8000",
+							"path": [
+								"admin",
+								"carrier-analysis",
+								"UPS"
+							]
+						},
+						"description": "Get comprehensive UPS performance analysis across all zip codes"
+					}
+				},
+				{
+					"name": "Analyze USPS Carrier Performance",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://0.0.0.0:8000/admin/carrier-analysis/USPS",
+							"protocol": "http",
+							"host": [
+								"0.0.0.0"
+							],
+							"port": "8000",
+							"path": [
+								"admin",
+								"carrier-analysis",
+								"USPS"
+							]
+						},
+						"description": "Get comprehensive USPS performance analysis (typically highest risk carrier)"
+					}
+				}
+			],
+			"description": "Admin endpoints for analytics and database management"
+		},
+		{
+			"name": "Learning System",
+			"item": [
+				{
+					"name": "Record On-Time Delivery",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "http://0.0.0.0:8000/admin/record-delivery?package_id=PKG001&carrier=UPS&origin_zip=12345&destination_zip=98101&scheduled_date=2025-08-01&actual_date=2025-08-01",
+							"protocol": "http",
+							"host": [
+								"0.0.0.0"
+							],
+							"port": "8000",
+							"path": [
+								"admin",
+								"record-delivery"
+							],
+							"query": [
+								{
+									"key": "package_id",
+									"value": "PKG001"
+								},
+								{
+									"key": "carrier",
+									"value": "UPS"
+								},
+								{
+									"key": "origin_zip",
+									"value": "12345"
+								},
+								{
+									"key": "destination_zip",
+									"value": "98101"
+								},
+								{
+									"key": "scheduled_date",
+									"value": "2025-08-01"
+								},
+								{
+									"key": "actual_date",
+									"value": "2025-08-01"
+								}
+							]
+						},
+						"description": "Record successful on-time delivery to improve UPS-Seattle performance metrics"
+					}
+				},
+				{
+					"name": "Record Delayed Delivery - Weather",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "http://0.0.0.0:8000/admin/record-delivery?package_id=PKG002&carrier=USPS&origin_zip=54321&destination_zip=33101&scheduled_date=2025-08-02&actual_date=2025-08-04&delay_reasons=[\"thunderstorm\",\"flooding\"]",
+							"protocol": "http",
+							"host": [
+								"0.0.0.0"
+							],
+							"port": "8000",
+							"path": [
+								"admin",
+								"record-delivery"
+							],
+							"query": [
+								{
+									"key": "package_id",
+									"value": "PKG002"
+								},
+								{
+									"key": "carrier",
+									"value": "USPS"
+								},
+								{
+									"key": "origin_zip",
+									"value": "54321"
+								},
+								{
+									"key": "destination_zip",
+									"value": "33101"
+								},
+								{
+									"key": "scheduled_date",
+									"value": "2025-08-02"
+								},
+								{
+									"key": "actual_date",
+									"value": "2025-08-04"
+								},
+								{
+									"key": "delay_reasons",
+									"value": "[\"thunderstorm\",\"flooding\"]"
+								}
+							]
+						},
+						"description": "Record weather-delayed delivery to Miami (2 days late) to worsen USPS-Miami metrics"
+					}
+				},
+				{
+					"name": "Record Major Delay - Carrier Issue",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "http://0.0.0.0:8000/admin/record-delivery?package_id=PKG003&carrier=DHL&origin_zip=11111&destination_zip=60601&scheduled_date=2025-08-01&actual_date=2025-08-05&delay_reasons=[\"sorting_facility_breakdown\",\"vehicle_breakdown\"]",
+							"protocol": "http",
+							"host": [
+								"0.0.0.0"
+							],
+							"port": "8000",
+							"path": [
+								"admin",
+								"record-delivery"
+							],
+							"query": [
+								{
+									"key": "package_id",
+									"value": "PKG003"
+								},
+								{
+									"key": "carrier",
+									"value": "DHL"
+								},
+								{
+									"key": "origin_zip",
+									"value": "11111"
+								},
+								{
+									"key": "destination_zip",
+									"value": "60601"
+								},
+								{
+									"key": "scheduled_date",
+									"value": "2025-08-01"
+								},
+								{
+									"key": "actual_date",
+									"value": "2025-08-05"
+								},
+								{
+									"key": "delay_reasons",
+									"value": "[\"sorting_facility_breakdown\",\"vehicle_breakdown\"]"
+								}
+							]
+						},
+						"description": "Record major 4-day delay to Chicago due to DHL operational issues"
+					}
+				}
+			],
+			"description": "Endpoints for recording delivery outcomes to improve risk predictions"
+		},
+		{
+			"name": "Debug & Development",
+			"item": [
+				{
+					"name": "Get Customer Actions Log",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://0.0.0.0:8000/actions",
+							"protocol": "http",
+							"host": [
+								"0.0.0.0"
+							],
+							"port": "8000",
+							"path": [
+								"actions"
+							]
+						},
+						"description": "Get last 10 customer actions for debugging"
+					}
+				},
+				{
+					"name": "Root Endpoint - Service Info",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://0.0.0.0:8000/",
+							"protocol": "http",
+							"host": [
+								"0.0.0.0"
+							],
+							"port": "8000",
+							"path": [
+								""
+							]
+						},
+						"description": "Get basic service information and available endpoints"
+					}
+				}
+			],
+			"description": "Debug and development helper endpoints"
+		},
+		{
+			"name": "Test Sequence - Complete Workflow",
+			"item": [
+				{
+					"name": "1. Check Service Health",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://0.0.0.0:8000/health",
+							"protocol": "http",
+							"host": [
+								"0.0.0.0"
+							],
+							"port": "8000",
+							"path": [
+								"health"
+							]
+						},
+						"description": "Step 1: Verify service is running and healthy"
+					}
+				},
+				{
+					"name": "2. Check Database Status",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://0.0.0.0:8000/admin/database-status",
+							"protocol": "http",
+							"host": [
+								"0.0.0.0"
+							],
+							"port": "8000",
+							"path": [
+								"admin",
+								"database-status"
+							]
+						},
+						"description": "Step 2: Verify database is initialized with seed data"
+					}
+				},
+				{
+					"name": "3. Get All Packages (Smart Risk)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://0.0.0.0:8000/packages",
+							"protocol": "http",
+							"host": [
+								"0.0.0.0"
+							],
+							"port": "8000",
+							"path": [
+								"packages"
+							]
+						},
+						"description": "Step 3: See all packages with database-driven risk scores"
+					}
+				},
+				{
+					"name": "4. Analyze High Risk Package",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://0.0.0.0:8000/packages/PKG004",
+							"protocol": "http",
+							"host": [
+								"0.0.0.0"
+							],
+							"port": "8000",
+							"path": [
+								"packages",
+								"PKG004"
+							]
+						},
+						"description": "Step 4: Get detailed analysis of highest risk package (Miami DHL)"
+					}
+				},
+				{
+					"name": "5. Send Alert for High Risk",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"package_id\": \"PKG004\",\n  \"customer_email\": \"miami-customer@example.com\"\n}"
+						},
+						"url": {
+							"raw": "http://0.0.0.0:8000/send-alert",
+							"protocol": "http",
+							"host": [
+								"0.0.0.0"
+							],
+							"port": "8000",
+							"path": [
+								"send-alert"
+							]
+						},
+						"description": "Step 5: Send alert email for the high-risk Miami package"
+					}
+				},
+				{
+					"name": "6. Record Customer Response",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"package_id\": \"PKG004\",\n  \"action\": \"Request Refund\",\n  \"customer_id\": \"MIAMI_CUST_789\",\n  \"notes\": \"Customer needs item for vacation, cannot wait for delay\"\n}"
+						},
+						"url": {
+							"raw": "http://0.0.0.0:8000/action",
+							"protocol": "http",
+							"host": [
+								"0.0.0.0"
+							],
+							"port": "8000",
+							"path": [
+								"action"
+							]
+						},
+						"description": "Step 6: Log customer choosing refund due to high risk"
+					}
+				},
+				{
+					"name": "7. Record Actual Delivery Outcome",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "http://0.0.0.0:8000/admin/record-delivery?package_id=PKG004&carrier=DHL&destination_zip=33101&scheduled_date=2025-08-01&actual_date=2025-08-06&delay_reasons=[\"hurricane\",\"facility_closure\"]",
+							"protocol": "http",
+							"host": [
+								"0.0.0.0"
+							],
+							"port": "8000",
+							"path": [
+								"admin",
+								"record-delivery"
+							],
+							"query": [
+								{
+									"key": "package_id",
+									"value": "PKG004"
+								},
+								{
+									"key": "carrier",
+									"value": "DHL"
+								},
+								{
+									"key": "destination_zip",
+									"value": "33101"
+								},
+								{
+									"key": "scheduled_date",
+									"value": "2025-08-01"
+								},
+								{
+									"key": "actual_date",
+									"value": "2025-08-06"
+								},
+								{
+									"key": "delay_reasons",
+									"value": "[\"hurricane\",\"facility_closure\"]"
+								}
+							]
+						},
+						"description": "Step 7: Record that package was indeed delayed (5 days late) - validates prediction"
+					}
+				},
+				{
+					"name": "8. Check Updated Performance Stats",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://0.0.0.0:8000/admin/performance-stats",
+							"protocol": "http",
+							"host": [
+								"0.0.0.0"
+							],
+							"port": "8000",
+							"path": [
+								"admin",
+								"performance-stats"
+							]
+						},
+						"description": "Step 8: See how the recorded outcome updated database metrics"
+					}
+				}
+			],
+			"description": "Complete workflow test - run these in sequence to see the full system in action"
+		}
+	]
+}

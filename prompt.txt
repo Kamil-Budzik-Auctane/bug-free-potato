@@ -1,0 +1,104 @@
+We’re building a Python (FastAPI-based) backend microservice called Shipment Risk Prediction Engine for a hackathon project at ShipStation.
+
+Our goal is to enrich shipment data with a predicted delivery risk score (0–100) and a list of reasons (e.g., weather, carrier delays, zip code-based risks). We’ll use mock data or hardcoded APIs where needed to save time.
+
+We want to build this incrementally and test progress step-by-step. Focus on modularity, API clarity, and working examples with testable endpoints.
+🔧 Backend Requirements (Python / FastAPI)
+
+Create a microservice with these endpoints:
+
+    GET /packages:
+    Returns mocked shipment list enriched with:
+
+        risk_score (0–100)
+
+        list of reasons (e.g., ["storm", "known UPS delays"])
+
+        It should return the required data with package id, frontend will implement mapping oh their own
+
+    GET /packages/{id}:
+    Returns risk score + reason for a single shipment
+
+    POST /send-alert:
+    Sends an email via SendGrid (mock if needed) with a warning for a high-risk shipment
+
+    POST /action:
+    Accepts customer action (Accept Delay / Request Refund / Resend) and logs it (mock logging)
+
+📦 Shipment Data
+
+Use mock shipment data for now. Each shipment should include:
+
+{
+  "package_id": "PKG001",
+  "destination_zip": "98101",
+  "destination_city": "Seattle",
+  "carrier": "UPS",
+  "expected_delivery_date": "2025-08-01"
+}
+
+Simulate 3–5 sample packages.
+🌦️ Risk Scoring Logic (MVP AI)
+
+Build a simple rule-based model for now (not ML). Base the risk_score (0–100) on factors like:
+
+    Carrier (e.g., "USPS" slightly riskier than "UPS")
+
+    Zip code or city (simulate known risky zips)
+
+    Weather forecast (call OpenWeatherMap API for a 2-city hardcoded lookup)
+
+    Seasonality (e.g., higher risk near holidays like Dec 24)
+
+    Combine rules into a numeric score + string reasons (e.g., ["snowstorm", "Christmas season"])
+
+📬 Send Alert
+
+    Endpoint /send-alert should accept a package_id, and simulate sending a warning email
+
+    Use SendGrid (or mock the call)
+
+    Message body: “Your package may be delayed due to: [reasons]. Choose what to do.”
+
+    Email preview logic is useful
+
+🧑‍💻 Frontend Integration Info (for reference only)
+
+The frontend (not built here) will:
+
+    Use the GET /packages endpoint to show the risk level of shipments with color badges
+
+    Tooltip will show the risk reasons
+
+    “Notify Customer” button will call POST /send-alert
+
+    A customer-facing page (not in this task) will call POST /action
+
+Design your responses in a way that makes this integration easy.
+✅ Notes & Constraints:
+
+    Weather: use OpenWeatherMap API, but limit it to 2 cities (hardcoded) for demo
+
+    Carrier API data: mock it (e.g., simulate UPS delays)
+
+    Shipment creation: no need to actually place orders, just log simulated actions
+
+    Prioritize clear, testable endpoints
+
+    Use async and typing best practices
+
+🧪 Bonus (optional):
+
+    Add GET /health or /status endpoint
+
+    Add caching for weather API (in-memory)
+
+    Add unit test stubs with pytest
+
+Please generate the full codebase (e.g. main.py, models.py, risk_engine.py, weather.py, etc.) that implements this MVP. Focus on:
+
+    Separation of concerns
+
+    Clean logic for risk scoring
+
+    Readable, commented, testable Python code
