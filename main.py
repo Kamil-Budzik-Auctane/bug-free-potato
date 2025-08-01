@@ -2,7 +2,8 @@ from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from models import (
     EnrichedPackage, AlertRequest, AlertResponse, 
-    ActionRequest, ActionResponse, Package
+    ActionRequest, ActionResponse, Package, EnhancedRiskAssessment,
+    ShipStationResponse, ShipStationShipment
 )
 from mock_data import MOCK_PACKAGES
 from risk_engine import RiskScoringEngine
@@ -10,9 +11,10 @@ from email_service import EmailService
 from database import risk_db
 from typing import List, Optional
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
 from dotenv import load_dotenv
+import hashlib
 
 # Load environment variables
 load_dotenv()
@@ -52,6 +54,40 @@ risk_engine = RiskScoringEngine()
 email_service = EmailService()
 
 # Customer actions now stored in database (removed in-memory storage)
+
+# Simple in-memory cache for risk assessments (1-hour TTL)
+risk_assessment_cache = {}
+
+def get_cache_key(package_id: str, delivery_date: str) -> str:
+    """Generate cache key for risk assessment"""
+    return hashlib.md5(f"{package_id}:{delivery_date}".encode()).hexdigest()
+
+def get_cached_assessment(package_id: str, delivery_date: str) -> Optional[EnhancedRiskAssessment]:
+    """Get cached risk assessment if not expired"""
+    cache_key = get_cache_key(package_id, delivery_date)
+    
+    if cache_key in risk_assessment_cache:
+        cached_item = risk_assessment_cache[cache_key]
+        # Check if cache is still valid (1 hour TTL)
+        if datetime.now() - cached_item["timestamp"] < timedelta(hours=1):
+            logger.info(f"Cache HIT for package {package_id}")
+            return cached_item["assessment"]
+        else:
+            # Cache expired, remove it
+            del risk_assessment_cache[cache_key]
+            logger.info(f"Cache EXPIRED for package {package_id}")
+    
+    logger.info(f"Cache MISS for package {package_id}")
+    return None
+
+def cache_assessment(package_id: str, delivery_date: str, assessment: EnhancedRiskAssessment):
+    """Cache risk assessment with timestamp"""
+    cache_key = get_cache_key(package_id, delivery_date)
+    risk_assessment_cache[cache_key] = {
+        "assessment": assessment,
+        "timestamp": datetime.now()
+    }
+    logger.info(f"Cached assessment for package {package_id}")
 
 logger.info("All services initialized successfully")
 
@@ -97,6 +133,9 @@ async def root():
         "endpoints": [
             "/packages",
             "/packages/{id}",
+            "/packages/{id}/risk-assessment",
+            "/enrich-shipments",
+            "/orders/{fulfillmentPlanId}/risk-assessment",
             "/send-alert",
             "/action",
             "/health"
@@ -158,6 +197,139 @@ async def get_package(package_id: str) -> EnrichedPackage:
     except Exception as e:
         logger.error(f"Error assessing risk for package {package_id}: {str(e)}")
         raise HTTPException(status_code=500, detail="Error calculating risk assessment")
+
+
+@app.get("/packages/{package_id}/risk-assessment", response_model=EnhancedRiskAssessment, summary="Get enhanced risk assessment for frontend")
+async def get_enhanced_risk_assessment(package_id: str) -> EnhancedRiskAssessment:
+    """
+    Returns enhanced risk assessment with detailed factor breakdown for frontend
+    Matches the exact format expected by the Risk Delivery Assessment feature
+    """
+    logger.info(f"GET /packages/{package_id}/risk-assessment - Enhanced risk assessment request")
+    
+    # Find package in mock data
+    package = next((p for p in MOCK_PACKAGES if p.package_id == package_id), None)
+    
+    if not package:
+        logger.warning(f"Package {package_id} not found for enhanced risk assessment")
+        raise HTTPException(
+            status_code=404, 
+            detail={"error": "ORDER_NOT_FOUND", "message": f"Order with ID {package_id} not found"}
+        )
+    
+    logger.info(f"Computing enhanced risk assessment for {package_id}: {package.destination_city} via {package.carrier}")
+    
+    try:
+        # Check cache first
+        cached_assessment = get_cached_assessment(package_id, package.expected_delivery_date)
+        if cached_assessment:
+            return cached_assessment
+        
+        # Calculate enhanced risk assessment using new method
+        enhanced_assessment = await risk_engine.calculate_enhanced_risk_assessment(package)
+        
+        # Cache the result
+        cache_assessment(package_id, package.expected_delivery_date, enhanced_assessment)
+        
+        logger.info(f"Enhanced risk assessment completed for {package_id}: score={enhanced_assessment.score}, confidence={enhanced_assessment.confidenceLevel}%")
+        
+        return enhanced_assessment
+    
+    except Exception as e:
+        logger.error(f"Error calculating enhanced risk assessment for {package_id}: {str(e)}")
+        raise HTTPException(
+            status_code=503, 
+            detail={"error": "RISK_ASSESSMENT_UNAVAILABLE", "message": "Risk assessment service temporarily unavailable"}
+        )
+
+
+@app.post("/enrich-shipments", response_model=ShipStationResponse, summary="Enrich ShipStation shipments with risk scores")
+async def enrich_shipments(shipstation_data: ShipStationResponse) -> ShipStationResponse:
+    """
+    Enrich ShipStation shipments with risk scores for grid display.
+    Takes the output from /ordergrid/shipmentmode/simple and adds riskScore to each shipment.
+    """
+    logger.info(f"POST /enrich-shipments - Enriching {len(shipstation_data.pageData)} shipments with risk scores")
+    
+    enriched_shipments = []
+    
+    for shipment in shipstation_data.pageData:
+        try:
+            # Calculate risk score for this shipment
+            risk_score = await risk_engine.calculate_shipstation_risk_score(shipment.dict())
+            
+            # Add risk score to shipment
+            shipment_dict = shipment.dict()
+            shipment_dict['riskScore'] = risk_score
+            
+            enriched_shipment = ShipStationShipment(**shipment_dict)
+            enriched_shipments.append(enriched_shipment)
+            
+            logger.debug(f"Enriched shipment {shipment.fulfillmentPlanId} with risk score: {risk_score}")
+            
+        except Exception as e:
+            # If risk calculation fails, add default risk score
+            logger.warning(f"Failed to calculate risk for {shipment.fulfillmentPlanId}: {str(e)}")
+            shipment_dict = shipment.dict()
+            shipment_dict['riskScore'] = 50  # Default medium risk
+            enriched_shipment = ShipStationShipment(**shipment_dict)
+            enriched_shipments.append(enriched_shipment)
+    
+    logger.info(f"Successfully enriched {len(enriched_shipments)} shipments with risk scores")
+    
+    # Return same structure with enriched data
+    return ShipStationResponse(
+        page=shipstation_data.page,
+        pageSize=shipstation_data.pageSize,
+        totalCount=shipstation_data.totalCount,
+        pageData=enriched_shipments
+    )
+
+
+@app.get("/orders/{fulfillmentPlanId}/risk-assessment", response_model=EnhancedRiskAssessment, summary="Get detailed risk assessment for ShipStation order")
+async def get_order_risk_assessment(fulfillmentPlanId: str) -> EnhancedRiskAssessment:
+    """
+    Get detailed risk assessment for a specific ShipStation order.
+    Used when user clicks into the detailed risk view from the grid.
+    """
+    logger.info(f"GET /orders/{fulfillmentPlanId}/risk-assessment - Detailed risk assessment request")
+    
+    # For now, we need to mock this since we don't have the original shipment data
+    # In your actual implementation, you might:
+    # 1. Store the enrichment data temporarily
+    # 2. Make another call to ShipStation API to get the full shipment details
+    # 3. Use fulfillmentPlanId to look up cached data
+    
+    # For demo purposes, create a mock shipment based on fulfillmentPlanId
+    mock_shipment = {
+        "fulfillmentPlanId": fulfillmentPlanId,
+        "orderNumber": f"ORDER-{fulfillmentPlanId}",
+        "recipientName": "Demo Customer",
+        "countryCode": "US",
+        "state": "CA",  # Default to California for demo
+        "requestedService": "UPS Ground",
+        "serviceName": "UPS",
+        "shipByDateTime": "2025-08-03T16:00:00Z",
+        "weight": {"unit": "Ounces", "value": 16}
+    }
+    
+    try:
+        # Convert to our package format
+        package = risk_engine._map_shipstation_to_package(mock_shipment)
+        
+        # Calculate enhanced risk assessment
+        enhanced_assessment = await risk_engine.calculate_enhanced_risk_assessment(package)
+        
+        logger.info(f"Enhanced risk assessment completed for order {fulfillmentPlanId}: score={enhanced_assessment.score}")
+        
+        return enhanced_assessment
+    
+    except Exception as e:
+        logger.error(f"Error calculating enhanced risk for order {fulfillmentPlanId}: {str(e)}")
+        raise HTTPException(
+            status_code=503, 
+            detail={"error": "RISK_ASSESSMENT_UNAVAILABLE", "message": "Risk assessment service temporarily unavailable"}
+        )
 
 
 @app.post("/send-alert", response_model=AlertResponse, summary="Send delay alert email")

@@ -4,22 +4,26 @@ A FastAPI-based microservice that uses **machine learning principles** and **SQL
 
 ## 🚀 Features
 
-- **Smart Risk Assessment**: Database-driven risk scoring (0-100) using historical performance data
+- **Enhanced Risk Assessment**: Detailed factor breakdown for frontend integration
+- **Smart Risk Scoring**: Database-driven risk scoring (0-100) using historical performance data
 - **Multi-factor Analysis**: Weather, carrier reliability, geographic risks, temporal patterns
 - **Continuous Learning**: System improves predictions from actual delivery outcomes
 - **Customer Alerts**: Email notifications via SendGrid for high-risk shipments  
 - **Action Logging**: Track customer responses (Accept Delay/Refund/Resend)
 - **Admin Dashboard**: Performance analytics and risk factor management
 - **RESTful API**: Clean, documented endpoints for frontend integration
+- **Performance Optimized**: 1-hour caching with <500ms response times
 
 ## 📋 API Endpoints
 
 ### Core Endpoints
 
 - `GET /packages` - List all packages with smart risk scores
-- `GET /packages/{id}` - Get single package risk assessment
+- `GET /packages/{id}` - Get single package risk assessment  
+- **`GET /packages/{id}/risk-assessment`** - **Enhanced risk assessment for frontend** 🎯
 - `POST /send-alert` - Send delay alert email to customer
 - `POST /action` - Log customer action choice
+- `GET /actions` - Get customer actions with statistics
 - `GET /health` - Health check endpoint
 
 ### Admin/Analytics Endpoints
@@ -28,10 +32,55 @@ A FastAPI-based microservice that uses **machine learning principles** and **SQL
 - `POST /admin/record-delivery` - Record actual delivery outcome for learning
 - `GET /admin/risk-factors/{zip_code}` - Get risk factors for specific zip code
 - `GET /admin/carrier-analysis/{carrier}` - Get detailed carrier performance analysis
+- `POST /admin/initialize-database` - Initialize database (run this first!)
 - `GET /admin/database-status` - Get database health and statistics
 
-### Response Format
+## 🎯 Enhanced Risk Assessment API (NEW!)
 
+The **main endpoint for frontend integration**:
+
+### Endpoint: `GET /packages/{id}/risk-assessment`
+
+**Perfect for ShipStation Risk Delivery Assessment feature!**
+
+### Response Format:
+```json
+{
+  "score": 75,
+  "confidenceLevel": 92,
+  "predictedDelayDays": 2,
+  "factors": {
+    "carrierPerformance": {
+      "score": 85,
+      "weight": 30,
+      "status": "Poor performance history with this carrier",
+      "level": "high"
+    },
+    "routeDistance": {
+      "score": 70,
+      "weight": 25,
+      "status": "Long distance route with multiple stops",
+      "level": "medium"
+    },
+    "weather": {
+      "score": 60,
+      "weight": 25,
+      "status": "Minor weather concerns along route",
+      "level": "medium"
+    },
+    "currentDelays": {
+      "score": 80,
+      "weight": 20,
+      "status": "Carrier experiencing network-wide delays",
+      "level": "high"
+    }
+  },
+  "originalDeliveryDate": "2024-01-15T00:00:00Z",
+  "revisedDeliveryDate": "2024-01-17T00:00:00Z"
+}
+```
+
+### Legacy Response Format (Simple):
 ```json
 {
   "package_id": "PKG001",
@@ -80,6 +129,21 @@ FROM_EMAIL=noreply@yourcompany.com
 
 ## 🚀 Running the Service
 
+### Quick Start (for your friend):
+```bash
+# 1. Install dependencies
+pip install -r requirements.txt
+
+# 2. Start server
+python run_server.py
+
+# 3. Initialize database (IMPORTANT!)
+curl -X POST http://localhost:8000/admin/initialize-database
+
+# 4. Test the enhanced risk assessment
+curl http://localhost:8000/packages/PKG0001/risk-assessment
+```
+
 ### Development Server
 ```bash
 python run_server.py
@@ -95,10 +159,20 @@ uvicorn main:app --reload --host 0.0.0.0 --port 8000
 - Interactive Docs: http://localhost:8000/docs
 - Alternative Docs: http://localhost:8000/redoc
 
+### Available Package IDs for Testing:
+- `PKG0001` through `PKG0075` (75 realistic packages)
+- Each has different risk scenarios (carriers, locations, dates)
+
 ## 🧪 Testing
 
 ```bash
-# Run tests
+# Run basic API tests
+python test_api.py
+
+# Test enhanced risk assessment
+python test_risk_api.py
+
+# Run unit tests
 python -m pytest test_main.py -v
 
 # Test with coverage

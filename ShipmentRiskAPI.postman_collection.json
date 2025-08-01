@@ -7,6 +7,228 @@
 	},
 	"item": [
 		{
+			"name": "🚀 ShipStation Integration (NEW!)",
+			"item": [
+				{
+					"name": "Enrich ShipStation Shipments",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"page\": 1,\n  \"pageSize\": 250,\n  \"totalCount\": 3,\n  \"pageData\": [\n    {\n      \"salesOrderId\": \"114bee91-3d21-58f4-8f5e-7d97b0405bc2\",\n      \"fulfillmentPlanId\": \"1147831\",\n      \"orderNumber\": \"100083598\",\n      \"recipientName\": \"Michel Cheve\",\n      \"orderDateTime\": \"2025-08-01T21:48:29\",\n      \"shipByDateTime\": \"2025-08-02T16:02:37\",\n      \"countryCode\": \"FR\",\n      \"state\": \"FR\",\n      \"derivedStatus\": \"AWP\",\n      \"store\": {\n        \"storeGuid\": \"0b5755f1-b33d-48b9-bba7-04d5306bbd10\",\n        \"marketplaceCode\": null\n      },\n      \"serviceId\": \"13\",\n      \"serviceName\": null,\n      \"shipFromId\": \"301\",\n      \"shipFromName\": \"My Default Location\",\n      \"weight\": {\n        \"unit\": \"Ounces\",\n        \"value\": 96.0\n      },\n      \"requestedService\": \"Select Shipping Method - Cheapest- First Class Mail\"\n    },\n    {\n      \"salesOrderId\": \"224bee91-3d21-58f4-8f5e-7d97b0405bc2\",\n      \"fulfillmentPlanId\": \"1147832\",\n      \"orderNumber\": \"100083599\",\n      \"recipientName\": \"John Smith\",\n      \"orderDateTime\": \"2025-08-01T10:30:00\",\n      \"shipByDateTime\": \"2025-08-02T16:00:00\",\n      \"countryCode\": \"US\",\n      \"state\": \"WA\",\n      \"derivedStatus\": \"AWP\",\n      \"store\": {\n        \"storeGuid\": \"0b5755f1-b33d-48b9-bba7-04d5306bbd10\",\n        \"marketplaceCode\": null\n      },\n      \"serviceId\": \"14\",\n      \"serviceName\": \"UPS Ground\",\n      \"shipFromId\": \"301\",\n      \"shipFromName\": \"My Default Location\",\n      \"weight\": {\n        \"unit\": \"Ounces\",\n        \"value\": 32.0\n      },\n      \"requestedService\": \"UPS Ground\"\n    },\n    {\n      \"salesOrderId\": \"334bee91-3d21-58f4-8f5e-7d97b0405bc2\",\n      \"fulfillmentPlanId\": \"1147833\",\n      \"orderNumber\": \"100083600\",\n      \"recipientName\": \"Sarah Johnson\",\n      \"orderDateTime\": \"2025-08-01T14:15:00\",\n      \"shipByDateTime\": \"2025-08-03T10:00:00\",\n      \"countryCode\": \"US\",\n      \"state\": \"FL\",\n      \"derivedStatus\": \"AWP\",\n      \"store\": {\n        \"storeGuid\": \"0b5755f1-b33d-48b9-bba7-04d5306bbd10\",\n        \"marketplaceCode\": null\n      },\n      \"serviceId\": \"15\",\n      \"serviceName\": \"FedEx Express\",\n      \"shipFromId\": \"301\",\n      \"shipFromName\": \"My Default Location\",\n      \"weight\": {\n        \"unit\": \"Ounces\",\n        \"value\": 8.0\n      },\n      \"requestedService\": \"FedEx 2Day\"\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "http://0.0.0.0:8000/enrich-shipments",
+							"protocol": "http",
+							"host": [
+								"0.0.0.0"
+							],
+							"port": "8000",
+							"path": [
+								"enrich-shipments"
+							]
+						},
+						"description": "🎯 MAIN INTEGRATION ENDPOINT: Takes ShipStation shipment data and adds riskScore to each shipment. Perfect for grid display!"
+					}
+				},
+				{
+					"name": "Get Detailed Risk - High Risk (France)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://0.0.0.0:8000/orders/1147831/risk-assessment",
+							"protocol": "http",
+							"host": [
+								"0.0.0.0"
+							],
+							"port": "8000",
+							"path": [
+								"orders",
+								"1147831",
+								"risk-assessment"
+							]
+						},
+						"description": "Get detailed risk breakdown for French shipment (USPS First Class to France)"
+					}
+				},
+				{
+					"name": "Get Detailed Risk - Very High Risk (Seattle UPS)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://0.0.0.0:8000/orders/1147832/risk-assessment",
+							"protocol": "http",
+							"host": [
+								"0.0.0.0"
+							],
+							"port": "8000",
+							"path": [
+								"orders",
+								"1147832",
+								"risk-assessment"
+							]
+						},
+						"description": "Get detailed risk breakdown for Seattle shipment (UPS Ground - expect 90+ risk score due to rain + performance issues)"
+					}
+				},
+				{
+					"name": "Get Detailed Risk - Medium Risk (Florida FedEx)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://0.0.0.0:8000/orders/1147833/risk-assessment",
+							"protocol": "http",
+							"host": [
+								"0.0.0.0"
+							],
+							"port": "8000",
+							"path": [
+								"orders",
+								"1147833",
+								"risk-assessment"
+							]
+						},
+						"description": "Get detailed risk breakdown for Florida shipment (FedEx 2Day - medium risk due to hurricane season)"
+					}
+				},
+				{
+					"name": "Test International Shipment (UK)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"page\": 1,\n  \"pageSize\": 250,\n  \"totalCount\": 1,\n  \"pageData\": [\n    {\n      \"salesOrderId\": \"uk-test-order-1\",\n      \"fulfillmentPlanId\": \"UK001\",\n      \"orderNumber\": \"UK-100001\",\n      \"recipientName\": \"James Wilson\",\n      \"orderDateTime\": \"2025-08-01T09:00:00\",\n      \"shipByDateTime\": \"2025-08-02T12:00:00\",\n      \"countryCode\": \"UK\",\n      \"state\": \"UK\",\n      \"derivedStatus\": \"AWP\",\n      \"store\": {\n        \"storeGuid\": \"test-store-guid\",\n        \"marketplaceCode\": \"AMAZON_UK\"\n      },\n      \"serviceId\": \"21\",\n      \"serviceName\": \"DHL Express International\",\n      \"shipFromId\": \"501\",\n      \"shipFromName\": \"UK Warehouse\",\n      \"weight\": {\n        \"unit\": \"Ounces\",\n        \"value\": 24.0\n      },\n      \"requestedService\": \"DHL Express International - 2-3 Business Days\"\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "http://0.0.0.0:8000/enrich-shipments",
+							"protocol": "http",
+							"host": [
+								"0.0.0.0"
+							],
+							"port": "8000",
+							"path": [
+								"enrich-shipments"
+							]
+						},
+						"description": "Test international shipment to UK - shows system handles global shipping"
+					}
+				},
+				{
+					"name": "Test Multiple Carriers Mix",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"page\": 1,\n  \"pageSize\": 250,\n  \"totalCount\": 4,\n  \"pageData\": [\n    {\n      \"salesOrderId\": \"test-ups-1\",\n      \"fulfillmentPlanId\": \"TEST001\",\n      \"orderNumber\": \"TEST-UPS-001\",\n      \"recipientName\": \"Alice Cooper\",\n      \"orderDateTime\": \"2025-08-01T08:00:00\",\n      \"shipByDateTime\": \"2025-08-02T10:00:00\",\n      \"countryCode\": \"US\",\n      \"state\": \"CA\",\n      \"derivedStatus\": \"AWP\",\n      \"store\": {\n        \"storeGuid\": \"test-store\",\n        \"marketplaceCode\": null\n      },\n      \"serviceId\": \"10\",\n      \"serviceName\": \"UPS Ground\",\n      \"shipFromId\": \"301\",\n      \"shipFromName\": \"Main Warehouse\",\n      \"weight\": {\n        \"unit\": \"Ounces\",\n        \"value\": 16.0\n      },\n      \"requestedService\": \"UPS Ground\"\n    },\n    {\n      \"salesOrderId\": \"test-fedex-1\",\n      \"fulfillmentPlanId\": \"TEST002\",\n      \"orderNumber\": \"TEST-FEDEX-001\",\n      \"recipientName\": \"Bob Dylan\",\n      \"orderDateTime\": \"2025-08-01T09:30:00\",\n      \"shipByDateTime\": \"2025-08-02T14:00:00\",\n      \"countryCode\": \"US\",\n      \"state\": \"NY\",\n      \"derivedStatus\": \"AWP\",\n      \"store\": {\n        \"storeGuid\": \"test-store\",\n        \"marketplaceCode\": null\n      },\n      \"serviceId\": \"20\",\n      \"serviceName\": \"FedEx Priority Overnight\",\n      \"shipFromId\": \"301\",\n      \"shipFromName\": \"Main Warehouse\",\n      \"weight\": {\n        \"unit\": \"Ounces\",\n        \"value\": 4.0\n      },\n      \"requestedService\": \"FedEx Priority Overnight\"\n    },\n    {\n      \"salesOrderId\": \"test-usps-1\",\n      \"fulfillmentPlanId\": \"TEST003\",\n      \"orderNumber\": \"TEST-USPS-001\",\n      \"recipientName\": \"Carol King\",\n      \"orderDateTime\": \"2025-08-01T11:00:00\",\n      \"shipByDateTime\": \"2025-08-03T16:00:00\",\n      \"countryCode\": \"US\",\n      \"state\": \"TX\",\n      \"derivedStatus\": \"AWP\",\n      \"store\": {\n        \"storeGuid\": \"test-store\",\n        \"marketplaceCode\": null\n      },\n      \"serviceId\": \"30\",\n      \"serviceName\": \"USPS Priority Mail\",\n      \"shipFromId\": \"301\",\n      \"shipFromName\": \"Main Warehouse\",\n      \"weight\": {\n        \"unit\": \"Ounces\",\n        \"value\": 64.0\n      },\n      \"requestedService\": \"USPS Priority Mail 2-Day\"\n    },\n    {\n      \"salesOrderId\": \"test-dhl-1\",\n      \"fulfillmentPlanId\": \"TEST004\",\n      \"orderNumber\": \"TEST-DHL-001\",\n      \"recipientName\": \"David Bowie\",\n      \"orderDateTime\": \"2025-08-01T13:15:00\",\n      \"shipByDateTime\": \"2025-08-02T08:00:00\",\n      \"countryCode\": \"US\",\n      \"state\": \"IL\",\n      \"derivedStatus\": \"AWP\",\n      \"store\": {\n        \"storeGuid\": \"test-store\",\n        \"marketplaceCode\": null\n      },\n      \"serviceId\": \"40\",\n      \"serviceName\": \"DHL Express\",\n      \"shipFromId\": \"301\",\n      \"shipFromName\": \"Main Warehouse\",\n      \"weight\": {\n        \"unit\": \"Ounces\",\n        \"value\": 12.0\n      },\n      \"requestedService\": \"DHL Express Next Day\"\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "http://0.0.0.0:8000/enrich-shipments",
+							"protocol": "http",
+							"host": [
+								"0.0.0.0"
+							],
+							"port": "8000",
+							"path": [
+								"enrich-shipments"
+							]
+						},
+						"description": "Test all 4 major carriers (UPS, FedEx, USPS, DHL) to different states - perfect for demo showing different risk levels"
+					}
+				}
+			],
+			"description": "🎯 NEW ShipStation Integration Endpoints - Use these for frontend integration!"
+		},
+		{
+			"name": "Enhanced Risk Assessment API",
+			"item": [
+				{
+					"name": "Enhanced Risk - PKG0001 (Demo Package)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://0.0.0.0:8000/packages/PKG0001/risk-assessment",
+							"protocol": "http",
+							"host": [
+								"0.0.0.0"
+							],
+							"port": "8000",
+							"path": [
+								"packages",
+								"PKG0001",
+								"risk-assessment"
+							]
+						},
+						"description": "🆕 Enhanced risk assessment with full factor breakdown - perfect for detailed modal view"
+					}
+				},
+				{
+					"name": "Enhanced Risk - High Risk Package",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://0.0.0.0:8000/packages/PKG0043/risk-assessment",
+							"protocol": "http",
+							"host": [
+								"0.0.0.0"
+							],
+							"port": "8000",
+							"path": [
+								"packages",
+								"PKG0043",
+								"risk-assessment"
+							]
+						},
+						"description": "Enhanced risk for Seattle USPS package - expect high risk due to weather + carrier combo"
+					}
+				},
+				{
+					"name": "Enhanced Risk - Low Risk Package",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://0.0.0.0:8000/packages/PKG0025/risk-assessment",
+							"protocol": "http",
+							"host": [
+								"0.0.0.0"
+							],
+							"port": "8000",
+							"path": [
+								"packages",
+								"PKG0025",
+								"risk-assessment"
+							]
+						},
+						"description": "Enhanced risk for Portland FedEx package - expect lower risk score"
+					}
+				}
+			],
+			"description": "🎯 Enhanced Risk Assessment API - Returns detailed factor breakdown with confidence levels"
+		},
+		{
 			"name": "Core Endpoints",
 			"item": [
 				{
