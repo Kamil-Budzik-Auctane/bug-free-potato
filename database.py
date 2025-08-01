@@ -127,6 +127,20 @@ class RiskDatabase:
             )
         """)
         
+        # Customer actions tracking
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS customer_actions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                package_id TEXT NOT NULL,
+                action TEXT NOT NULL,  -- 'Accept Delay', 'Request Refund', 'Resend'
+                customer_id TEXT,
+                notes TEXT,
+                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                processed BOOLEAN DEFAULT FALSE,
+                processing_notes TEXT
+            )
+        """)
+        
         logger.info("All database tables created successfully")
     
     async def _seed_initial_data(self, db: aiosqlite.Connection):
@@ -380,6 +394,98 @@ class RiskDatabase:
         
         await db.commit()
     
+    async def record_customer_action(self, package_id: str, action: str, 
+                                   customer_id: str = None, notes: str = None) -> Dict:
+        """Record customer action in database"""
+        logger.info(f"Recording customer action: {action} for package {package_id}")
+        
+        async with aiosqlite.connect(self.db_path) as db:
+            cursor = await db.execute("""
+                INSERT INTO customer_actions (package_id, action, customer_id, notes)
+                VALUES (?, ?, ?, ?)
+            """, (package_id, action, customer_id, notes))
+            
+            action_id = cursor.lastrowid
+            await db.commit()
+            
+            logger.info(f"Customer action recorded with ID: {action_id}")
+            
+            return {
+                "id": action_id,
+                "package_id": package_id,
+                "action": action,
+                "customer_id": customer_id,
+                "notes": notes,
+                "timestamp": datetime.now().isoformat(),
+                "processed": False
+            }
+    
+    async def get_customer_actions(self, limit: int = 50) -> List[Dict]:
+        """Get recent customer actions"""
+        async with aiosqlite.connect(self.db_path) as db:
+            cursor = await db.execute("""
+                SELECT id, package_id, action, customer_id, notes, timestamp, processed, processing_notes
+                FROM customer_actions 
+                ORDER BY timestamp DESC
+                LIMIT ?
+            """, (limit,))
+            
+            actions = await cursor.fetchall()
+            
+            return [
+                {
+                    "id": action[0],
+                    "package_id": action[1],
+                    "action": action[2],
+                    "customer_id": action[3],
+                    "notes": action[4],
+                    "timestamp": action[5],
+                    "processed": bool(action[6]),
+                    "processing_notes": action[7]
+                }
+                for action in actions
+            ]
+    
+    async def get_customer_action_stats(self) -> Dict:
+        """Get customer action statistics"""
+        async with aiosqlite.connect(self.db_path) as db:
+            # Get action counts by type
+            cursor = await db.execute("""
+                SELECT action, COUNT(*) as count
+                FROM customer_actions
+                GROUP BY action
+                ORDER BY count DESC
+            """)
+            action_counts = await cursor.fetchall()
+            
+            # Get recent activity (last 7 days)
+            cursor = await db.execute("""
+                SELECT COUNT(*) as total_actions
+                FROM customer_actions
+                WHERE timestamp > datetime('now', '-7 days')
+            """)
+            recent_activity = await cursor.fetchone()
+            
+            # Get processing status
+            cursor = await db.execute("""
+                SELECT 
+                    COUNT(*) as total,
+                    SUM(CASE WHEN processed THEN 1 ELSE 0 END) as processed,
+                    SUM(CASE WHEN NOT processed THEN 1 ELSE 0 END) as pending
+                FROM customer_actions
+            """)
+            processing_stats = await cursor.fetchone()
+            
+            return {
+                "action_breakdown": [{"action": ac[0], "count": ac[1]} for ac in action_counts],
+                "recent_activity": recent_activity[0] if recent_activity else 0,
+                "processing_stats": {
+                    "total": processing_stats[0] if processing_stats else 0,
+                    "processed": processing_stats[1] if processing_stats else 0,
+                    "pending": processing_stats[2] if processing_stats else 0
+                }
+            }
+
     async def get_performance_stats(self) -> Dict:
         """Get overall performance statistics for dashboard"""
         async with aiosqlite.connect(self.db_path) as db:
@@ -409,6 +515,9 @@ class RiskDatabase:
             """)
             recent_stats = await cursor.fetchone()
             
+            # Get customer action stats
+            customer_stats = await self.get_customer_action_stats()
+            
             return {
                 "carriers": [{"carrier": c[0], "deliveries": c[1], "on_time": c[2], "reliability": c[3]} 
                            for c in carriers],
@@ -418,7 +527,8 @@ class RiskDatabase:
                     "total_deliveries": recent_stats[0] or 0,
                     "delayed_deliveries": recent_stats[1] or 0,
                     "average_delay_hours": recent_stats[2] or 0
-                } if recent_stats else {}
+                } if recent_stats else {},
+                "customer_actions": customer_stats
             }
 
 

@@ -51,8 +51,7 @@ logger.info(f"   FROM_EMAIL: {os.getenv('FROM_EMAIL', 'noreply@shipstation.com')
 risk_engine = RiskScoringEngine()
 email_service = EmailService()
 
-# In-memory storage for customer actions (replace with database in production)
-customer_actions = []
+# Customer actions now stored in database (removed in-memory storage)
 
 logger.info("All services initialized successfully")
 
@@ -219,18 +218,13 @@ async def log_customer_action(action_request: ActionRequest) -> ActionResponse:
         raise HTTPException(status_code=404, detail=f"Package {action_request.package_id} not found")
     
     try:
-        # Create action record
-        action_record = {
-            "timestamp": datetime.now().isoformat(),
-            "package_id": action_request.package_id,
-            "action": action_request.action.value,
-            "customer_id": action_request.customer_id,
-            "notes": action_request.notes
-        }
-        
-        # Store action (in production, save to database)
-        customer_actions.append(action_record)
-        logger.info(f"Action stored in memory (total actions: {len(customer_actions)})")
+        # Store action in database
+        action_record = await risk_db.record_customer_action(
+            package_id=action_request.package_id,
+            action=action_request.action.value,
+            customer_id=action_request.customer_id,
+            notes=action_request.notes
+        )
         
         # Log the action
         logger.info(f"Customer action logged successfully: {action_record}")
@@ -269,13 +263,21 @@ async def health_check():
         raise HTTPException(status_code=503, detail="Service unhealthy")
 
 
-@app.get("/actions", summary="Get logged customer actions (debug endpoint)")
-async def get_customer_actions():
-    """Debug endpoint to view logged customer actions"""
-    return {
-        "total_actions": len(customer_actions),
-        "actions": customer_actions[-10:]  # Return last 10 actions
-    }
+@app.get("/actions", summary="Get logged customer actions")
+async def get_customer_actions(limit: int = 20):
+    """Get recent customer actions from database"""
+    try:
+        actions = await risk_db.get_customer_actions(limit=limit)
+        action_stats = await risk_db.get_customer_action_stats()
+        
+        return {
+            "total_actions": action_stats["processing_stats"]["total"],
+            "recent_actions": actions,
+            "statistics": action_stats
+        }
+    except Exception as e:
+        logger.error(f"Error fetching customer actions: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error fetching customer actions")
 
 
 @app.get("/admin/performance-stats", summary="Get performance statistics from database")
