@@ -3,7 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from models import (
     EnrichedPackage, AlertRequest, AlertResponse, 
     ActionRequest, ActionResponse, Package, EnhancedRiskAssessment,
-    ShipStationResponse, ShipStationShipment
+    ShipStationResponse, ShipStationShipment, ShipStationAwaitingShipmentResponse,
+    ShipStationSalesOrder
 )
 from mock_data import MOCK_PACKAGES
 from risk_engine import RiskScoringEngine
@@ -135,6 +136,7 @@ async def root():
             "/packages/{id}",
             "/packages/{id}/risk-assessment",
             "/enrich-shipments",
+            "/enrich-awaiting-shipments",
             "/orders/{fulfillmentPlanId}/risk-assessment",
             "/send-alert",
             "/action",
@@ -283,6 +285,56 @@ async def enrich_shipments(shipstation_data: ShipStationResponse) -> ShipStation
         pageSize=shipstation_data.pageSize,
         totalCount=shipstation_data.totalCount,
         pageData=enriched_shipments
+    )
+
+
+@app.post("/enrich-awaiting-shipments", response_model=ShipStationAwaitingShipmentResponse, summary="Enrich awaiting shipment data with risk scores")
+async def enrich_awaiting_shipments(shipstation_data: ShipStationAwaitingShipmentResponse) -> ShipStationAwaitingShipmentResponse:
+    """
+    Enrich ShipStation awaiting shipment data with risk scores.
+    Takes the output from frontend 'awaiting shipment' call and adds riskScore to each sales order.
+    This handles the format: {"currentPageFulfillmentPlanIds": [...], "salesOrders": [...]}
+    """
+    logger.info(f"POST /enrich-awaiting-shipments - Enriching {len(shipstation_data.salesOrders)} sales orders with risk scores")
+    
+    enriched_orders = []
+    
+    for order in shipstation_data.salesOrders:
+        try:
+            # Calculate risk score for this sales order
+            # Convert sales order to a format the risk engine can understand
+            risk_data = {
+                "fulfillmentPlanId": order.fulfillmentPlanIds[0] if order.fulfillmentPlanIds else "",
+                "orderNumber": order.orderNumber,
+                "derivedStatus": order.derivedStatus,
+                "countryCode": order.shipTos[0].countryCode if order.shipTos and order.shipTos[0].countryCode else "US",
+                "state": order.shipTos[0].state if order.shipTos and order.shipTos[0].state else "",
+                "city": order.shipTos[0].city if order.shipTos and order.shipTos[0].city else "",
+                "serviceName": order.requestedService or "Standard",
+                "orderDateTime": order.orderDateTime,
+                "shipByDateTime": order.shipByDateTime
+            }
+            
+            risk_score = await risk_engine.calculate_shipstation_risk_score(risk_data)
+            
+            # Add risk score to sales order
+            order.riskScore = risk_score
+            enriched_orders.append(order)
+            
+            logger.debug(f"Enriched sales order {order.orderNumber} with risk score: {risk_score}")
+            
+        except Exception as e:
+            # If risk calculation fails, add default risk score
+            logger.warning(f"Failed to calculate risk for order {order.orderNumber}: {str(e)}")
+            order.riskScore = 50  # Default medium risk
+            enriched_orders.append(order)
+    
+    logger.info(f"Successfully enriched {len(enriched_orders)} sales orders with risk scores")
+    
+    # Return same structure with enriched data
+    return ShipStationAwaitingShipmentResponse(
+        currentPageFulfillmentPlanIds=shipstation_data.currentPageFulfillmentPlanIds,
+        salesOrders=enriched_orders
     )
 
 

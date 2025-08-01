@@ -1,104 +1,97 @@
-We’re building a Python (FastAPI-based) backend microservice called Shipment Risk Prediction Engine for a hackathon project at ShipStation.
+Backend Implementation Request: Risk Delivery Assessment API
+Context
+The frontend team has implemented a new Risk Delivery Assessment feature for the ShipStation application. This feature displays AI-powered delivery risk analysis for orders. The frontend is currently using mock data and needs a backend API endpoint to provide real risk assessment data.
 
-Our goal is to enrich shipment data with a predicted delivery risk score (0–100) and a list of reasons (e.g., weather, carrier delays, zip code-based risks). We’ll use mock data or hardcoded APIs where needed to save time.
 
-We want to build this incrementally and test progress step-by-step. Focus on modularity, API clarity, and working examples with testable endpoints.
-🔧 Backend Requirements (Python / FastAPI)
-
-Create a microservice with these endpoints:
-
-    GET /packages:
-    Returns mocked shipment list enriched with:
-
-        risk_score (0–100)
-
-        list of reasons (e.g., ["storm", "known UPS delays"])
-
-        It should return the required data with package id, frontend will implement mapping oh their own
-
-    GET /packages/{id}:
-    Returns risk score + reason for a single shipment
-
-    POST /send-alert:
-    Sends an email via SendGrid (mock if needed) with a warning for a high-risk shipment
-
-    POST /action:
-    Accepts customer action (Accept Delay / Request Refund / Resend) and logs it (mock logging)
-
-📦 Shipment Data
-
-Use mock shipment data for now. Each shipment should include:
+Response Format
+The API should return a JSON response with the following structure:
 
 {
-  "package_id": "PKG001",
-  "destination_zip": "98101",
-  "destination_city": "Seattle",
-  "carrier": "UPS",
-  "expected_delivery_date": "2025-08-01"
+  "score": 75,                    // Overall risk score (0-100, where 100 = highest risk)
+  "confidenceLevel": 92,          // AI model confidence percentage (0-100)
+  "predictedDelayDays": 2,        // Number of days delay predicted (0 if no delay)
+  
+  "factors": {
+    "carrierPerformance": {
+      "score": 85,                // Individual factor risk score (0-100)
+      "weight": 30,               // Percentage weight in overall calculation
+      "status": "Poor performance history with this carrier",
+      "level": "high"             // Risk level: "high" | "medium" | "low"
+    },
+    "routeDistance": {
+      "score": 70,
+      "weight": 25,
+      "status": "Long distance route with multiple stops",
+      "level": "medium"
+    },
+    "weather": {
+      "score": 60,
+      "weight": 25,
+      "status": "Minor weather concerns along route",
+      "level": "medium"
+    },
+    "currentDelays": {
+      "score": 80,
+      "weight": 20,
+      "status": "Carrier experiencing network-wide delays",
+      "level": "high"
+    }
+  },
+  
+  "originalDeliveryDate": "2024-01-15T00:00:00Z",    // ISO 8601 format
+  "revisedDeliveryDate": "2024-01-17T00:00:00Z"      // Adjusted date if delay predicted
 }
 
-Simulate 3–5 sample packages.
-🌦️ Risk Scoring Logic (MVP AI)
+json
 
-Build a simple rule-based model for now (not ML). Base the risk_score (0–100) on factors like:
 
-    Carrier (e.g., "USPS" slightly riskier than "UPS")
+Business Logic Requirements
+Risk Score Calculation
+Overall risk score should be weighted average of all factors
+Formula: (carrierPerformance.score * 0.30) + (routeDistance.score * 0.25) + (weather.score * 0.25) + (currentDelays.score * 0.20)
+Risk Level Thresholds
+High Risk: score >= 80
+Medium Risk: score >= 50 && score < 80
+Low Risk: score < 50
+Factor Weights (must total 100%)
+Carrier Performance: 30%
+Route Distance/Complexity: 25%
+Weather Conditions: 25%
+Current Carrier Delays: 20%
+Delay Prediction
+High risk (80+): Predict 2-3 days delay
+Medium risk (50-79): Predict 1-2 days delay
+Low risk (<50): No delay predicted
+Data Sources Needed
+Carrier Performance: Historical on-time delivery rates, damage rates, customer complaints
+Route Distance: Miles, number of stops, route complexity, urban vs rural
+Weather: Current and forecasted conditions along route (integrate weather API)
+Current Delays: Real-time carrier network status, port congestion, known issues
+Additional Considerations
+Cache risk assessments with 1-hour TTL to reduce computation
+Consider webhook/WebSocket for real-time risk updates
+Log all risk assessments for ML model training
+Include request ID for debugging: X-Risk-Assessment-ID header
+Error Responses
+// 404 - Order not found
+{
+  "error": "ORDER_NOT_FOUND",
+  "message": "Order with ID {orderId} not found"
+}
 
-    Zip code or city (simulate known risky zips)
+// 503 - Risk assessment unavailable
+{
+  "error": "RISK_ASSESSMENT_UNAVAILABLE", 
+  "message": "Risk assessment service temporarily unavailable"
+}
 
-    Weather forecast (call OpenWeatherMap API for a 2-city hardcoded lookup)
+json
 
-    Seasonality (e.g., higher risk near holidays like Dec 24)
 
-    Combine rules into a numeric score + string reasons (e.g., ["snowstorm", "Christmas season"])
+Performance Requirements
+Response time: < 500ms (use caching)
+Support concurrent requests for bulk order views
+Graceful degradation if external services (weather API) fail
+Please implement this endpoint to support the new Risk Delivery Assessment feature in the ShipStation frontend.
 
-📬 Send Alert
-
-    Endpoint /send-alert should accept a package_id, and simulate sending a warning email
-
-    Use SendGrid (or mock the call)
-
-    Message body: “Your package may be delayed due to: [reasons]. Choose what to do.”
-
-    Email preview logic is useful
-
-🧑‍💻 Frontend Integration Info (for reference only)
-
-The frontend (not built here) will:
-
-    Use the GET /packages endpoint to show the risk level of shipments with color badges
-
-    Tooltip will show the risk reasons
-
-    “Notify Customer” button will call POST /send-alert
-
-    A customer-facing page (not in this task) will call POST /action
-
-Design your responses in a way that makes this integration easy.
-✅ Notes & Constraints:
-
-    Weather: use OpenWeatherMap API, but limit it to 2 cities (hardcoded) for demo
-
-    Carrier API data: mock it (e.g., simulate UPS delays)
-
-    Shipment creation: no need to actually place orders, just log simulated actions
-
-    Prioritize clear, testable endpoints
-
-    Use async and typing best practices
-
-🧪 Bonus (optional):
-
-    Add GET /health or /status endpoint
-
-    Add caching for weather API (in-memory)
-
-    Add unit test stubs with pytest
-
-Please generate the full codebase (e.g. main.py, models.py, risk_engine.py, weather.py, etc.) that implements this MVP. Focus on:
-
-    Separation of concerns
-
-    Clean logic for risk scoring
-
-    Readable, commented, testable Python code
+PLEASE CHECK WHAT FRONTEND NEEDS< let me know if something is too hard to implement, let me know if there is a better way to handling smth and so on. modify the xisting codebase to handle new requirements, business logic is fine, but the output we give might need to be modified

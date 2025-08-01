@@ -86,9 +86,98 @@ class ShipStationWeight(BaseModel):
 
 class ShipStationStore(BaseModel):
     storeGuid: str
+    marketplaceId: Optional[str] = None
     marketplaceCode: Optional[str] = None
+    externalUrl: Optional[str] = None
+    source: Optional[dict] = None
 
 
+class ShipStationShipTo(BaseModel):
+    isModified: Optional[bool] = None
+    name: Optional[str] = None
+    company: Optional[str] = None
+    phone: Optional[str] = None
+    line1: Optional[str] = None
+    line2: Optional[str] = None
+    line3: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    postalCode: Optional[str] = None
+    countryCode: Optional[str] = None
+    residentialIndicator: Optional[str] = None
+    verificationStatus: Optional[str] = None
+    verificationMessage: Optional[str] = None
+    verificationUtc: Optional[str] = None
+    lockAddress: Optional[bool] = None
+
+
+class ShipStationSoldTo(BaseModel):
+    customerId: Optional[str] = None
+    name: Optional[str] = None
+    phone: Optional[str] = None
+    username: Optional[str] = None
+    email: Optional[str] = None
+
+
+class ShipStationItem(BaseModel):
+    salesOrderItemId: str
+    productId: Optional[str] = None
+    sku: Optional[str] = None
+    name: Optional[str] = None
+    originalQuantity: Optional[int] = None
+    quantity: Optional[int] = None
+    productThumbnailUrl: Optional[str] = None
+    unitPrice: Optional[dict] = None
+    totalPrice: Optional[dict] = None
+    isGift: Optional[bool] = None
+    attributes: Optional[List] = None
+
+
+class ShipStationAmountSummary(BaseModel):
+    productTotal: Optional[dict] = None
+    orderTotal: Optional[dict] = None
+    shippingPaid: Optional[dict] = None
+    taxPaid: Optional[dict] = None
+    totalPaid: Optional[dict] = None
+
+
+class ShipStationSalesOrder(BaseModel):
+    fulfillmentPlanIds: List[str]
+    salesOrderId: str
+    orderNumber: str
+    createdDateTime: str
+    modifiedDateTime: str
+    orderDateTime: str
+    paidDateTime: Optional[str] = None
+    shipByDateTime: Optional[str] = None
+    holdUntilDateTime: Optional[str] = None
+    assignedToUser: Optional[str] = None
+    assignedToUserId: Optional[str] = None
+    requestedService: Optional[str] = None
+    isGift: Optional[bool] = None
+    isCanceled: Optional[bool] = None
+    derivedStatus: str
+    items: List[ShipStationItem]
+    store: ShipStationStore
+    soldTo: ShipStationSoldTo
+    shipTos: List[ShipStationShipTo]
+    amountSummary: ShipStationAmountSummary
+    discounts: Optional[List] = None
+    premiumAttributes: Optional[List] = None
+    tagIds: Optional[List] = None
+    originalSource: Optional[str] = None
+    otherIdentifiers: Optional[List] = None
+    restrictions: Optional[dict] = None
+    # Risk score added by our enrichment
+    riskScore: Optional[int] = Field(default=None, ge=0, le=100)
+
+
+class ShipStationAwaitingShipmentResponse(BaseModel):
+    currentPageFulfillmentPlanIds: List[str]
+    salesOrders: List[ShipStationSalesOrder]
+
+
+# Legacy models for backward compatibility
 class ShipStationShipment(BaseModel):
     salesOrderId: str
     fulfillmentPlanId: str
